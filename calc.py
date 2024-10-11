@@ -6,7 +6,7 @@ from math import *
 from decimal import Decimal
 
 DEFAULT_FONT = ('Arial',20,'bold')
-CURRENT_LABEL_FONT = ('Arial',35,'bold')
+CURRENT_LABEL_FONT = ('Arial',25,'bold')
 TOTAL_LABEL_FONT = ('Arial',15,'bold')
 window = tk.Tk()
 
