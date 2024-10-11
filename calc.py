@@ -1,8 +1,13 @@
+import re
+import sys
 import tkinter as tk
 from tkinter import Frame
 from math import *
+from decimal import Decimal
 
 DEFAULT_FONT = ('Arial',20,'bold')
+CURRENT_LABEL_FONT = ('Arial',35,'bold')
+TOTAL_LABEL_FONT = ('Arial',15,'bold')
 window = tk.Tk()
 
 operators = ('+','-','/','*','\u00D7','%','**')
@@ -103,32 +108,56 @@ def log_identify(x, y=None):
     else:
         return log(x, y)
 
+sys.set_int_max_str_digits(1000000000)
 
 def equal():
     global current_text
     global total_text
     global operatorIsPressed
 
-    if total_text and total_text[-1] != '=':
-        if total_text and total_text[-1] == ')':
-            total_text = total_text + '='
-        elif total_text and total_text[-1] == ',':
-            total_text = total_text + current_text + ')' + '='
-        else:
-            total_text = total_text + current_text + '='
+    try:
+        if total_text and total_text[-1] != '=':
+            if total_text and total_text[-1] == ')':
+                total_text = total_text + '='
+            elif total_text and total_text[-1] == ',':
+                total_text = total_text + current_text + ')' + '='
+            else:
+                total_text = total_text + current_text + '='
 
-        total_label.set(total_text)
+            total_label.set(total_text)
 
-        result = str(eval(total_text[:-1],{"sqrt": sqrt,"sqr": square,"fact": factorial,"floor": floor,"ceil": ceil,"log": log_identify}))
 
-        if result[-2:] == '.0':
-            result = result[:-2]
+            if "fact(" in total_text:
+                fact_pattern = r'fact\((\d+)\)'
+                matches = re.findall(fact_pattern, total_text)
+                for match in matches:
+                    n = int(match)
+                    if n < 0:
+                        raise ValueError("Factorial is not defined for negative numbers.")
+                    factorial_result = factorial(n)
+                    total_text = total_text.replace(f"fact({n})", str(factorial_result))
 
-        current_text = str(result)
-        current_label.set(current_text)
+            result = eval(total_text[:-1], {"sqrt": sqrt, "sqr": square, "floor": floor, "ceil": ceil, "log": log_identify})
 
-        operatorIsPressed = True
+            decimal_result = Decimal(result)
 
+            threshold = Decimal('1e6')
+
+            if abs(decimal_result) >= threshold:
+                result = f"{decimal_result:.2e}"
+            else:
+                result = str(decimal_result)
+
+            if result[-2:] == '.0':
+                result = result[:-2]
+
+            current_text = str(result)
+            current_label.set(current_text[:16])
+
+            operatorIsPressed = True
+    except Exception as e:
+        print(e)
+        current_label.set(str(e))
 
 def del_button():
     global current_text
@@ -170,7 +199,7 @@ def square(x):
     return x ** 2
 
 
-window.geometry("455x667")
+window.geometry("455x600")
 window.title("Calculator")
 window.resizable(False,False)
 window.iconbitmap("Windows_Calculator_icon.ico")
@@ -179,10 +208,10 @@ total_label = tk.StringVar()
 current_label = tk.StringVar()
 current_label.set(current_text)
 
-label = tk.Label(window,textvariable=total_label,font=DEFAULT_FONT,bg='white',width=24,height=2,anchor='e',padx=25)
+label = tk.Label(window,textvariable=total_label,font=TOTAL_LABEL_FONT,bg='white',width=24,height=1,anchor='e',padx=25,pady=5)
 label.pack(expand=True,fill='both')
 
-currentLabel = tk.Label(window,textvariable=current_label,font=DEFAULT_FONT,bg='white',width=24,height=1,anchor='e',padx=25)
+currentLabel = tk.Label(window,textvariable=current_label,font=CURRENT_LABEL_FONT,bg='white',width=24,height=1,anchor='e',padx=25)
 currentLabel.pack(expand=True,fill='both')
 
 frame = Frame(window)
